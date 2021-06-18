@@ -10,6 +10,7 @@ export type Column = {
     primary?: boolean;
     generated?: true | "increment" | "uuid";
     default?: string; // ?
+    transformer?: string;
     options: {
         name: string;
         length?: number;

@@ -60,17 +60,7 @@ function generateModels(
             noEscape: true,
         });
     });
-    // add type ->view or table
 
-    // const entityTemplatePath = path.resolve(
-    //     __dirname,
-    //     "templates",
-    //     "entity.mst"
-    // );
-    // const entityTemplate = fs.readFileSync(entityTemplatePath, "utf-8");
-    // const entityCompliedTemplate = Handlebars.compile(entityTemplate, {
-    //     noEscape: true,
-    // });
     databaseModel.forEach((element) => {
         let casedFileName = "";
         switch (generationOptions.convertCaseFile) {
@@ -93,14 +83,10 @@ function generateModels(
             entitiesPath,
             `${casedFileName}.ts`
         );
-        // // add type ->view or table
 
         const elementType = element?.type === "view" ? "view" : "table";
         const rendered = compliedTemplates[elementType](element);
-        // add type ->view or table
-        // const rendered = entityCompliedTemplate(element);
 
-        // add type ->view or table end
         const withImportStatements = removeUnusedImports(
             EOL !== eolConverter[generationOptions.convertEol]
                 ? rendered.replace(

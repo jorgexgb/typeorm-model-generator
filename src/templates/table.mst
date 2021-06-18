@@ -5,7 +5,7 @@
 import {{localImport (toEntityName entityName)}} from './{{toFileName fileName}}'
 {{/inline}}
 {{#*inline "Column"}}
-{{#generated}}@PrimaryGeneratedColumn({ type:"{{type}}", {{/generated}}{{^generated}}@Column("{{type}}",{ {{#primary}}primary:{{primary}},{{/primary}}{{/generated}}{{json options}}{{#default}},default: {{.}},{{/default}} })
+{{#generated}}@PrimaryGeneratedColumn({ type:"{{type}}", {{/generated}}{{^generated}}@Column("{{type}}",{ {{#primary}}primary:{{primary}},{{/primary}}{{/generated}}{{json options}}{{#default}},default: {{.}}{{/default}}{{#transformer}},transformer: {{.}},{{/transformer}} })
 {{printPropertyVisibility}}{{toPropertyName tscName}}{{strictMode}}:{{tscType}}{{#if options.nullable}} | null{{/if}};
 
 {{/inline}}
@@ -42,6 +42,8 @@ export {{defaultExport}} class {{toEntityName tscName}}{{#activeRecord}} extends
 }
 {{/inline}}
 import {BaseEntity,Column,Entity,Index,JoinColumn,JoinTable,ManyToMany,ManyToOne,OneToMany,OneToOne,PrimaryColumn,PrimaryGeneratedColumn,RelationId} from "typeorm";
+import { ColumnNullableNumericTransformer } from '../common'
+import { ColumnNumericTransformer } from '../common';
 {{#fileImports}}{{> Import}}{{/fileImports}}
 
 {{> Entity}}

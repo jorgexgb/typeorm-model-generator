@@ -47,7 +47,8 @@ export default class PostgresDriver extends AbstractDriver {
             TABLE_TYPE: string;
             VIEW_DEFINITION: string;
             DB_NAME: string;
-        }[] = ( // add type ->view or table
+        }[] = // add type ->view or table
+        (
             await this.Connection.query(
                 `SELECT t.table_schema as "TABLE_SCHEMA",t.table_name as "TABLE_NAME",t.table_type as "TABLE_TYPE",v.view_definition as "VIEW_DEFINITION", t.table_catalog as "DB_NAME"
                 FROM INFORMATION_SCHEMA.TABLES as t LEFT JOIN INFORMATION_SCHEMA.VIEWS AS v ON v.TABLE_CATALOG = t.TABLE_CATALOG AND v.TABLE_SCHEMA = t.TABLE_SCHEMA AND v.TABLE_NAME = t.TABLE_NAME
@@ -147,6 +148,13 @@ export default class PostgresDriver extends AbstractDriver {
                         resp.isidentity === "YES" || resp.is_identity === "YES"
                             ? true
                             : undefined;
+
+                    const columnTypes = this.MatchColumnTypes(
+                        resp.data_type,
+                        resp.udt_name,
+                        resp.enumvalues
+                    );
+
                     const defaultValue = generated
                         ? undefined
                         : PostgresDriver.ReturnDefaultValueFunction(
@@ -154,11 +162,6 @@ export default class PostgresDriver extends AbstractDriver {
                               resp.data_type
                           );
 
-                    const columnTypes = this.MatchColumnTypes(
-                        resp.data_type,
-                        resp.udt_name,
-                        resp.enumvalues
-                    );
                     if (columnTypes.tsType === "NonNullable<unknown>") {
                         if (
                             resp.data_type === "USER-DEFINED" ||
@@ -216,11 +219,19 @@ export default class PostgresDriver extends AbstractDriver {
                                 : undefined;
                     }
 
+                    const transformer =
+                        resp.data_type === "numeric"
+                            ? options.nullable
+                                ? `new ColumnNullableNumericTransformer()`
+                                : `new ColumnNumericTransformer()`
+                            : undefined;
+
                     ent.columns.push({
                         generated,
                         type: columnType,
                         default: defaultValue,
                         options,
+                        transformer,
                         tscName,
                         tscType,
                     });
@@ -268,7 +279,7 @@ export default class PostgresDriver extends AbstractDriver {
                 ret.tsType = "string";
                 break;
             case "numeric":
-                ret.tsType = "string";
+                ret.tsType = "number";
                 break;
             case "real":
                 ret.tsType = "number";
@@ -712,6 +723,11 @@ export default class PostgresDriver extends AbstractDriver {
         if (["json", "jsonb"].some((x) => x === dataType)) {
             return `${defaultValue.slice(1, defaultValue.length - 1)}`;
         }
+
+        if (dataType === "numeric") {
+            return `() => 0`;
+        }
+
         return `() => "${defaultValue}"`;
     }
 }
