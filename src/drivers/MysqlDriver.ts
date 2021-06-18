@@ -46,6 +46,8 @@ export default class MysqlDriver extends AbstractDriver {
         const response: {
             TABLE_SCHEMA: string;
             TABLE_NAME: string;
+            TABLE_TYPE: string;
+            VIEW_DEFINITION: string;
             DB_NAME: string;
         }[] = await this.ExecQuery(
             `SELECT TABLE_SCHEMA, TABLE_NAME, TABLE_SCHEMA as DB_NAME
