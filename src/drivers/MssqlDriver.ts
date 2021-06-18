@@ -45,13 +45,16 @@ export default class MssqlDriver extends AbstractDriver {
         const response: {
             TABLE_SCHEMA: string;
             TABLE_NAME: string;
+            TABLE_TYPE: string;
+            VIEW_DEFINITION: string;
             DB_NAME: string;
-        }[] = (
+        }[] = ( // add type ->view or table
             await request.query(
-                `SELECT TABLE_SCHEMA,TABLE_NAME, table_catalog as "DB_NAME" FROM INFORMATION_SCHEMA.TABLES
-        WHERE TABLE_TYPE='BASE TABLE' and TABLE_SCHEMA in (${MssqlDriver.buildEscapedObjectList(
-            schemas
-        )}) AND TABLE_CATALOG in (${MssqlDriver.buildEscapedObjectList(
+                `SELECT t.TABLE_SCHEMA,t.TABLE_NAME,t.TABLE_TYPE,v.view_definition as "VIEW_DEFINITION",t.table_catalog as "DB_NAME"
+                FROM INFORMATION_SCHEMA.TABLES as t LEFT JOIN INFORMATION_SCHEMA.VIEWS AS v ON v.TABLE_CATALOG = t.TABLE_CATALOG AND v.TABLE_SCHEMA = t.TABLE_SCHEMA AND v.TABLE_NAME = t.TABLE_NAME
+                WHERE t.TABLE_SCHEMA in (${MssqlDriver.buildEscapedObjectList(
+                    schemas
+                )}) AND TABLE_CATALOG in (${MssqlDriver.buildEscapedObjectList(
                     dbNames
                 )})`
             )
@@ -94,15 +97,24 @@ export default class MssqlDriver extends AbstractDriver {
             IsIdentity: number;
             IsUnique: number;
         }[] = (
-            await request.query(`SELECT c.TABLE_NAME,c.TABLE_SCHEMA,c.COLUMN_NAME,c.COLUMN_DEFAULT,IS_NULLABLE, DATA_TYPE,CHARACTER_MAXIMUM_LENGTH,NUMERIC_PRECISION,NUMERIC_SCALE,
+            await request.query(`SELECT c.TABLE_NAME,c.TABLE_SCHEMA,c.COLUMN_NAME,c.COLUMN_DEFAULT,IS_NULLABLE,
+            DATA_TYPE,CHARACTER_MAXIMUM_LENGTH,NUMERIC_PRECISION,NUMERIC_SCALE,
             COLUMNPROPERTY(object_id(c.TABLE_SCHEMA + '.'+ c.TABLE_NAME),c. COLUMN_NAME, 'IsIdentity') IsIdentity,
-             CASE WHEN ISNULL(tc.cnt,0)>0 THEN 1 ELSE 0 END AS IsUnique
-              FROM INFORMATION_SCHEMA.COLUMNS c
-              LEFT JOIN (SELECT tc.TABLE_SCHEMA,tc.TABLE_NAME,cu.COLUMN_NAME,COUNT(1) AS cnt FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc inner join INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE cu on cu.CONSTRAINT_NAME = tc.CONSTRAINT_NAME where tc.CONSTRAINT_TYPE = 'UNIQUE' GROUP BY tc.TABLE_SCHEMA,tc.TABLE_NAME,cu.COLUMN_NAME) AS tc
-               on tc.TABLE_NAME = c.TABLE_NAME and tc.COLUMN_NAME = c.COLUMN_NAME and tc.TABLE_SCHEMA=c.TABLE_SCHEMA
-              where c.TABLE_SCHEMA in (${MssqlDriver.buildEscapedObjectList(
-                  schemas
-              )}) AND c.TABLE_CATALOG in (${MssqlDriver.buildEscapedObjectList(
+            CASE WHEN ISNULL(tc.cnt,0)>0 THEN 1 ELSE 0 END AS  IsUnique
+            FROM INFORMATION_SCHEMA.COLUMNS c
+            LEFT JOIN
+                (SELECT tc.TABLE_SCHEMA,tc.TABLE_NAME,cu.COLUMN_NAME,COUNT(1) AS cnt
+                FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+                    inner join INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE cu
+                        on cu.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
+                where
+                    tc.CONSTRAINT_TYPE = 'UNIQUE' GROUP BY tc.TABLE_SCHEMA,tc.TABLE_NAME,cu.COLUMN_NAME) AS tc
+                 on tc.TABLE_NAME = c.TABLE_NAME
+                 and tc.COLUMN_NAME = c.COLUMN_NAME
+                 and tc.TABLE_SCHEMA=c.TABLE_SCHEMA
+                 where c.TABLE_SCHEMA in (${MssqlDriver.buildEscapedObjectList(
+                     schemas
+                 )}) AND c.TABLE_CATALOG in (${MssqlDriver.buildEscapedObjectList(
                 dbNames
             )}) order by ordinal_position
         `)

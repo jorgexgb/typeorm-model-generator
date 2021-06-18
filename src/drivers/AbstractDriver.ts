@@ -67,6 +67,20 @@ export default abstract class AbstractDriver {
         "varbinary",
     ];
 
+    public GetAllTablesQuery: (
+        schemas: string[],
+        dbNames: string[]
+    ) => Promise<
+        {
+            TABLE_SCHEMA: string;
+            TABLE_NAME: string;
+            // add type ->view or table
+            TABLE_TYPE: string;
+            VIEW_DEFINITION: string;
+            DB_NAME: string;
+        }[]
+    >;
+
     public static FindManyToManyRelations(dbModel: Entity[]) {
         let retVal = dbModel;
         const manyToManyEntities = retVal.filter(
@@ -220,10 +234,36 @@ export default abstract class AbstractDriver {
         connectionOptons: IConnectionOptions
     ): Promise<void>;
 
-    public abstract GetAllTables(
+    public async GetAllTables(
         schemas: string[],
         dbNames: string[]
-    ): Promise<Entity[]>;
+    ): Promise<Entity[]> {
+        const response = await this.GetAllTablesQuery(schemas, dbNames);
+        const ret: Entity[] = [] as Entity[];
+        response.forEach((val) => {
+            ret.push({
+                columns: [],
+                indices: [],
+                relations: [],
+                relationIds: [],
+                sqlName: val.TABLE_NAME,
+                tscName: val.TABLE_NAME,
+                fileName: val.TABLE_NAME,
+                database: dbNames.length > 1 ? val.DB_NAME : "",
+                schema: val.TABLE_SCHEMA,
+                // add type ->view or table
+                type: val.TABLE_TYPE === "VIEW" ? "view" : "table",
+                expression: val.VIEW_DEFINITION
+                    ? val.VIEW_DEFINITION.substring(
+                          val.VIEW_DEFINITION.indexOf("SELECT")
+                      ).trimRight()
+                    : "",
+                fileImports: [],
+            });
+            // if(val.TABLE_TYPE==='VIEW'){console.log(val.TABLE_NAME,val.VIEW_DEFINITION)}
+        });
+        return ret;
+    }
 
     public static GetRelationsFromRelationTempInfo(
         relationsTemp: RelationInternal[],
