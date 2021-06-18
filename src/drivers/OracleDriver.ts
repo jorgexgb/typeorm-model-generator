@@ -50,7 +50,6 @@ export default class OracleDriver extends AbstractDriver {
                 VIEW_DEFINITION: string;
                 DB_NAME: string;
             }>(
-                // TODO　sql not ready
                 `SELECT NULL AS TABLE_SCHEMA, TABLE_NAME, NULL AS DB_NAME FROM all_tables WHERE owner = (select user from dual)`
             )
         ).rows!;
@@ -72,7 +71,7 @@ export default class OracleDriver extends AbstractDriver {
         return ret;
     }
 
-    public async GetCoulmnsFromEntity(entities: Entity[]): Promise<Entity[]> {
+    public async GetColumnsFromEntity(entities: Entity[]): Promise<Entity[]> {
         const response = (
             await this.Connection.execute<{
                 TABLE_NAME: string;

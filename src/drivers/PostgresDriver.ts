@@ -63,6 +63,13 @@ export default class PostgresDriver extends AbstractDriver {
                 indices: [],
                 relations: [],
                 relationIds: [],
+                // add type ->view or table
+                type: val.TABLE_TYPE === "VIEW" ? "view" : "table",
+                expression: val.VIEW_DEFINITION
+                    ? val.VIEW_DEFINITION.substring(
+                          val.VIEW_DEFINITION.indexOf("SELECT")
+                      ).trimRight()
+                    : "",
                 sqlName: val.TABLE_NAME,
                 tscName: val.TABLE_NAME,
                 fileName: val.TABLE_NAME,
@@ -74,7 +81,7 @@ export default class PostgresDriver extends AbstractDriver {
         return ret;
     }
 
-    public async GetCoulmnsFromEntity(
+    public async GetColumnsFromEntity(
         entities: Entity[],
         schemas: string[]
     ): Promise<Entity[]> {

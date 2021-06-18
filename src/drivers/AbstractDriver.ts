@@ -189,7 +189,7 @@ export default abstract class AbstractDriver {
             connectionOptions.schemaNames,
             connectionOptions.databaseNames
         );
-        await this.GetCoulmnsFromEntity(
+        await this.GetColumnsFromEntity(
             dbModel,
             connectionOptions.schemaNames,
             connectionOptions.databaseNames
@@ -415,7 +415,7 @@ export default abstract class AbstractDriver {
         return entities;
     }
 
-    public abstract GetCoulmnsFromEntity(
+    public abstract GetColumnsFromEntity(
         entities: Entity[],
         schemas: string[],
         dbNames: string[]
